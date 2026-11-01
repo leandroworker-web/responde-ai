@@ -1,0 +1,389 @@
+<title>Responde Aí</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+/* Layout: palco vertical de programa de auditório — pergunta no topo, 4 respostas no meio, plateia (ranking + quem respondeu) embaixo, controles discretos no rodapé */
+:root{
+  --ink:#0B1630; --panel:#13224A; --panel-2:#1A2C5C; --line:#2A3E78;
+  --gold:#FFC23D; --gold-ink:#3A2600; --text:#F3F5FF; --muted:#9AA8D6;
+  --right:#3DDC97; --wrong:#FF6B5E;
+  --display:"Lilita One","Arial Black",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--ink);color:var(--text);font-family:var(--body);font-weight:600;overflow:hidden;
+  background-image:radial-gradient(120% 60% at 50% -10%, #23407f 0%, transparent 60%),radial-gradient(80% 40% at 50% 110%, #1a2c5c 0%, transparent 70%)}
+.stage{height:100%;display:flex;flex-direction:column;gap:7px;max-width:520px;margin:0 auto;
+  padding-left:max(14px, env(safe-area-inset-left,0px));padding-right:max(14px, env(safe-area-inset-right,0px));padding-block:10px 8px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.logo{font-family:var(--display);font-size:1.5rem;line-height:1;letter-spacing:.5px;color:var(--gold);text-shadow:0 3px 0 #a86f00}
+.logo span{color:var(--text);text-shadow:0 3px 0 #2a3e78}
+.chips{display:flex;gap:6px;align-items:center}
+.chip{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.on{color:var(--right);border-color:color-mix(in srgb,var(--right) 50%,transparent)}
+.chip.sim{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.chip.off{color:var(--wrong);border-color:color-mix(in srgb,var(--wrong) 50%,transparent)}
+.ladder{display:flex;gap:4px}
+.ladder i{flex:1;height:6px;border-radius:3px;background:var(--panel-2)}
+.ladder i.done{background:var(--gold)}
+.ladder i.now{background:var(--text)}
+.meta{display:flex;justify-content:space-between;align-items:baseline;font-size:.8rem;color:var(--muted);font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.meta b{color:var(--gold);font-variant-numeric:tabular-nums}
+.qcard{position:relative;background:var(--panel);border:2px solid var(--gold);border-radius:16px;padding:10px 60px 10px 14px;min-height:72px;display:flex;align-items:center}
+.qtext{font-family:var(--display);font-weight:400;font-size:1.2rem;line-height:1.15;text-wrap:balance}
+.timer{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:46px;height:46px}
+.timer svg{width:46px;height:46px;transform:rotate(-90deg)}
+.timer circle{fill:none;stroke-width:5}
+.timer .bg{stroke:var(--panel-2)}
+.timer .fg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.timer .n{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:1.2rem;font-variant-numeric:tabular-nums}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ans{position:relative;display:flex;align-items:center;gap:10px;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:7px 8px;overflow:hidden;min-height:40px}
+.ans .fill{position:absolute;inset:0 auto 0 0;width:0;background:color-mix(in srgb,var(--gold) 18%,transparent);transition:width .4s ease}
+.ans .k{position:relative;width:26px;height:26px;flex:none;border-radius:8px;background:var(--gold);color:var(--gold-ink);display:grid;place-items:center;font-family:var(--display);font-size:1.05rem}
+.ans .t{position:relative;flex:1;min-width:0;font-size:.92rem;font-weight:800;line-height:1.15}
+.ans .p{font-size:.8rem}
+.ans .p{position:relative;font-weight:900;font-variant-numeric:tabular-nums;color:var(--muted)}
+.ans.right{border-color:var(--right)}
+.ans.right .fill{background:color-mix(in srgb,var(--right) 26%,transparent)}
+.ans.right .k{background:var(--right);color:#05301d}
+.ans.right .p{color:var(--right)}
+.ans.dim{opacity:.45}
+.cta{display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:6px 12px;font-weight:900}
+.cta .say{font-family:var(--display);font-size:1.1rem;letter-spacing:.5px}
+.cta .say b{color:var(--gold);font-weight:400}
+.cta .cnt{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.bottom{flex:1;min-height:0;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:7px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:6px}
+.box h3{margin:0;font-size:.7rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.rank,.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.rank li{display:flex;align-items:center;gap:8px;font-size:1.05rem;font-weight:800;min-width:0}
+.rank li:first-child{font-size:1.2rem}
+.feed{flex-direction:row;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.feed li{display:flex;align-items:center;gap:6px;font-size:1rem;font-weight:800;min-width:0;max-width:100%;background:var(--panel-2);border-radius:999px;padding:4px 10px 4px 4px}
+.feed li.empty{background:none;padding:0;font-size:.85rem}
+.av{width:26px;height:26px;flex:none;border-radius:50%;background:var(--panel-2);display:grid;place-items:center;font-size:.65rem;font-weight:900;color:var(--gold);overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pts{font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums}
+.pos{width:14px;flex:none;font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums}
+.feed li .nm{color:var(--text)}
+.empty{font-size:.8rem;color:var(--muted)}
+.controls{display:flex;gap:6px;justify-content:center}
+.btn{font:800 .8rem var(--body);color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer}
+.btn:focus-visible,.field input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn.primary{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:default}
+/* telas de espera e fim */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px;background:color-mix(in srgb,var(--ink) 88%,transparent);border-radius:16px}
+.center{position:relative;flex:none}
+.big{font-family:var(--display);font-size:2rem;line-height:1.05;text-wrap:balance;color:var(--gold)}
+.sub{color:var(--muted);font-weight:800;max-width:30ch}
+.toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--line);padding:8px 14px;border-radius:999px;font-weight:800;font-size:.85rem;max-width:90vw;text-align:center}
+/* painel de configuração */
+.sheet{position:fixed;inset:0;background:color-mix(in srgb,#000 55%,transparent);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet .in{width:100%;max-width:520px;max-height:92%;overflow:auto;background:var(--panel);border-top:2px solid var(--gold);border-radius:18px 18px 0 0;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.sheet h2{margin:0;font-family:var(--display);font-weight:400;font-size:1.5rem;color:var(--gold)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:.75rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field input{font:700 1rem var(--body);color:var(--text);background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;gap:8px;align-items:center;font-weight:800}
+.check input{width:20px;height:20px;accent-color:var(--gold)}
+.note{font-size:.82rem;color:var(--muted);line-height:1.45;margin:0}
+.raw{font:600 .72rem ui-monospace,Menlo,monospace;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;max-height:140px;overflow:auto;white-space:pre-wrap;word-break:break-all;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="stage" id="stage">
+  <div class="top">
+    <div class="logo">Responde <span>Aí</span></div>
+    <div class="chips"><span class="chip off" id="conn">Desconectado</span></div>
+  </div>
+
+  <div class="ladder" id="ladder"></div>
+  <div class="meta"><span id="qnum">Pergunta 1/10</span><span id="qlvl">Fácil · <b>100 pts</b></span></div>
+
+  <div class="center">
+    <div class="qcard"><div class="qtext" id="qtext">Quantos dias tem um ano bissexto?</div>
+      <div class="timer"><svg viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="23"/><circle class="fg" id="ring" cx="27" cy="27" r="23" stroke-dasharray="144.5" stroke-dashoffset="0"/></svg><div class="n" id="secs">20</div></div>
+    </div>
+  </div>
+
+  <div class="answers" id="answers"></div>
+
+  <div class="cta"><div class="say">Comente <b>A</b>, <b>B</b>, <b>C</b> ou <b>D</b></div><div class="cnt" id="cnt">0 respostas</div></div>
+
+  <div class="bottom" style="position:relative">
+    <div class="box"><h3>Ranking da live</h3><ol class="rank" id="rank"></ol></div>
+    <div class="box"><h3>Acabaram de responder</h3><ul class="feed" id="feed"></ul></div>
+    <div class="overlay" id="overlay" hidden><div class="big" id="ovBig"></div><div class="sub" id="ovSub"></div></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="bStart">Iniciar rodada</button>
+    <button class="btn" id="bNext" disabled>Próxima</button>
+    <button class="btn" id="bCfg">Ajustes</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="in">
+    <h2>Ajustes</h2>
+    <div class="field"><label for="fUser">Seu @ do TikTok</label><input id="fUser" placeholder="ex.: lenesantos" autocomplete="off" autocapitalize="off"></div>
+    <div class="field"><label for="fKey">Chave da Euler Stream</label><input id="fKey" type="password" placeholder="cole aqui a API key" autocomplete="off"></div>
+    <div class="row"><button class="btn primary" id="bConn">Conectar na live</button><button class="btn" id="bDisc">Desconectar</button></div>
+    <p class="note">A chave fica salva só neste celular. Não mostre esta tela durante a live.</p>
+    <label class="check"><input type="checkbox" id="fSim"> Simulador de chat (para testar sem live)</label>
+    <label class="check"><input type="checkbox" id="fAuto" checked> Modo automático (passa sozinho de pergunta)</label>
+    <label class="check"><input type="checkbox" id="fSfx" checked> Efeitos sonoros (relógio, acerto, fim do tempo)</label>
+    <label class="check"><input type="checkbox" id="fMus" checked> Música de fundo</label>
+    <div class="field"><label for="fVol">Volume</label><input id="fVol" type="range" min="0" max="100" value="70"></div>
+    <div class="field"><label for="fTime">Segundos por pergunta</label><input id="fTime" type="number" min="8" max="60" value="20" inputmode="numeric"></div>
+    <div class="field"><label>Última mensagem recebida da live</label><div class="raw" id="raw">Nada recebido ainda.</div></div>
+    <div class="row"><button class="btn" id="bReset">Zerar ranking</button><button class="btn primary" id="bClose">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- perguntas (nível 1 fácil · 2 média · 3 difícil · 4 muito difícil) ---------- */
+const Q=[
+[1,"Quantos dias tem um ano bissexto?",["364","365","366","367"],2],
+[1,"Qual é a capital do Brasil?",["Rio de Janeiro","São Paulo","Brasília","Salvador"],2],
+[1,"Quantas patas tem uma aranha?","6|8|10|12",1],
+[1,"Qual planeta é conhecido como Planeta Vermelho?",["Vênus","Marte","Júpiter","Saturno"],1],
+[1,"Quantos minutos tem uma hora?","30|60|90|100",1],
+[1,"Qual é o maior oceano do mundo?",["Atlântico","Índico","Pacífico","Ártico"],2],
+[1,"Em que continente fica o Egito?",["Ásia","Europa","África","Oceania"],2],
+[1,"Quantas cores tem o arco-íris?","5|6|7|8",2],
+[1,"Azul misturado com amarelo dá qual cor?",["Verde","Roxo","Laranja","Marrom"],0],
+[1,"Quantos jogadores de cada time ficam em campo no futebol?","9|10|11|12",2],
+[1,"Quantos anos tem um século?","10|50|100|1000",2],
+[1,"Quantos lados tem um hexágono?","5|6|7|8",1],
+[1,"Quantos graus tem um ângulo reto?","45|90|180|360",1],
+[2,"Em que ano os portugueses chegaram ao Brasil?","1492|1500|1530|1822",1],
+[2,"Qual é o maior planeta do Sistema Solar?",["Terra","Saturno","Júpiter","Netuno"],2],
+[2,"Quem pintou a Mona Lisa?",["Michelangelo","Leonardo da Vinci","Van Gogh","Picasso"],1],
+[2,"Em que ano foi proclamada a Independência do Brasil?","1500|1808|1822|1889",2],
+[2,"Qual é a capital da Argentina?",["Santiago","Montevidéu","Buenos Aires","Lima"],2],
+[2,"Quantos estados tem o Brasil, sem contar o Distrito Federal?","24|26|27|28",1],
+[2,"Qual gás as plantas absorvem na fotossíntese?",["Oxigênio","Gás carbônico","Nitrogênio","Hélio"],1],
+[2,"Qual é o menor país do mundo?",["Mônaco","Vaticano","San Marino","Malta"],1],
+[2,"Qual é a montanha mais alta do mundo?",["K2","Everest","Aconcágua","Kilimanjaro"],1],
+[2,"Qual é o planeta mais próximo do Sol?",["Vênus","Mercúrio","Marte","Terra"],1],
+[2,"Qual é a língua oficial de Angola?",["Inglês","Francês","Português","Espanhol"],2],
+[2,"Qual é o único mamífero que voa de verdade?",["Esquilo-voador","Morcego","Ornitorrinco","Pinguim"],1],
+[2,"Qual é a moeda do Japão?",["Yuan","Won","Iene","Rupia"],2],
+[2,"Quantos jogadores de cada time ficam em quadra no vôlei?","5|6|7|8",1],
+[2,"A quantos graus Celsius a água ferve ao nível do mar?","90|100|110|120",1],
+[3,"Qual é o símbolo químico do ouro?",["Au","Ag","Fe","Or"],0],
+[3,"Quem escreveu Dom Casmurro?",["José de Alencar","Machado de Assis","Jorge Amado","Graciliano Ramos"],1],
+[3,"Qual é o osso mais longo do corpo humano?",["Úmero","Tíbia","Fêmur","Rádio"],2],
+[3,"Em que ano o ser humano pisou na Lua pela primeira vez?","1959|1965|1969|1972",2],
+[3,"Qual é a capital da Austrália?",["Sydney","Melbourne","Camberra","Perth"],2],
+[3,"Quantos ossos tem o corpo humano adulto?","186|206|226|306",1],
+[3,"O símbolo químico Fe representa qual elemento?",["Flúor","Ferro","Fósforo","Frâncio"],1],
+[3,"Quem foi o primeiro presidente do Brasil?",["Getúlio Vargas","Deodoro da Fonseca","Floriano Peixoto","Dom Pedro II"],1],
+[3,"Qual é o maior deserto quente do mundo?",["Saara","Atacama","Gobi","Kalahari"],0],
+[3,"Em que ano terminou a Segunda Guerra Mundial?","1939|1942|1945|1950",2],
+[3,"Qual é a fórmula do sal de cozinha?",["NaCl","KCl","H2O","CaCO3"],0],
+[3,"Quantos dentes tem um adulto com a dentição completa?","28|30|32|34",2],
+[3,"Qual é o maior órgão do corpo humano?",["Fígado","Pele","Pulmão","Cérebro"],1],
+[4,"Qual é a velocidade aproximada da luz no vácuo?",["300 mil km/s","30 mil km/s","3 milhões km/s","300 km/s"],0],
+[4,"Quantos corações tem um polvo?","1|2|3|4",2],
+[4,"Quem compôs As Quatro Estações?",["Mozart","Beethoven","Vivaldi","Bach"],2],
+[4,"Qual é a capital do Canadá?",["Toronto","Vancouver","Ottawa","Montreal"],2],
+[4,"Qual metal é líquido em temperatura ambiente?",["Ferro","Mercúrio","Alumínio","Cobre"],1],
+[4,"Quantos segundos tem um dia?",["3.600","24.000","86.400","100.000"],2],
+].map(([l,q,o,c])=>({l,q,o:Array.isArray(o)?o:o.split("|"),c}));
+
+const PLAN=[1,1,1,2,2,2,3,3,4,4];
+const VALUE=[100,150,200,300,400,500,700,1000,1500,2000];
+const LVL={1:"Fácil",2:"Média",3:"Difícil",4:"Muito difícil"};
+const L="ABCD";
+
+/* ---------- estado ---------- */
+const S={round:[],i:-1,phase:"idle",votes:new Map(),left:0,timer:null,score:new Map(),users:new Map(),feed:[],ws:null,sim:null,used:new Set()};
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem("ra_"+k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem("ra_"+k,v)}catch(e){}}};
+const secs=()=>Math.max(8,Math.min(60,parseInt($("fTime").value)||20));
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function pick(level){
+  let pool=Q.filter(q=>q.l===level&&!S.used.has(q.q));
+  if(!pool.length){Q.filter(q=>q.l===level).forEach(q=>S.used.delete(q.q));pool=Q.filter(q=>q.l===level)}
+  const q=pool[Math.random()*pool.length|0];S.used.add(q.q);return q;
+}
+function newRound(){S.round=PLAN.map(pick);S.i=-1}
+
+/* ---------- desenho ---------- */
+function drawLadder(){$("ladder").innerHTML=VALUE.map((_,k)=>`<i class="${k<S.i?"done":k===S.i?"now":""}"></i>`).join("")}
+function drawQuestion(){
+  const q=S.round[S.i]||S.round[0]||Q[0];
+  const k=Math.max(0,S.i);
+  $("qnum").textContent=`Pergunta ${k+1}/10`;
+  $("qlvl").innerHTML=`${LVL[PLAN[k]]} · <b>${VALUE[k]} pts</b>`;
+  $("qtext").textContent=q.q;
+  drawAnswers();drawLadder();
+}
+function tally(){const t=[0,0,0,0];S.votes.forEach(v=>t[v]++);return t}
+function drawAnswers(){
+  const q=S.round[S.i]||Q[0];const t=tally();const n=S.votes.size;const rev=S.phase==="reveal";
+  $("answers").innerHTML=q.o.map((o,k)=>{
+    const pct=n?Math.round(t[k]*100/n):0;
+    const cls=rev?(k===q.c?"right":"dim"):"";
+    return `<div class="ans ${cls}"><div class="fill" style="width:${pct}%"></div><div class="k">${L[k]}</div><div class="t">${esc(o)}</div><div class="p">${pct}%</div></div>`}).join("");
+  $("cnt").textContent=`${n} ${n===1?"resposta":"respostas"}`;
+}
+function drawTimer(){const tot=secs();$("secs").textContent=S.left;$("ring").style.strokeDashoffset=String(144.5*(1-S.left/tot))}
+function initials(u){return esc((u.nick||u.id||"?").replace(/[^\p{L}\p{N}]/gu,"").slice(0,2).toUpperCase()||"?")}
+function avatar(u){return `<span class="av">${u.pic?`<img src="${esc(u.pic)}" alt="" onerror="this.remove()">`:""}${u.pic?"":initials(u)}</span>`}
+function drawRank(){
+  const top=[...S.score.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  $("rank").innerHTML=top.length?top.map(([id,p],k)=>{const u=S.users.get(id)||{id};return `<li><span class="pos">${k+1}</span>${avatar(u)}<span class="nm">${esc(u.nick||id)}</span><span class="pts">${p}</span></li>`}).join(""):`<li class="empty">Quem acertar aparece aqui.</li>`;
+}
+function drawFeed(){
+  $("feed").innerHTML=S.feed.length?S.feed.map(u=>`<li>${avatar(u)}<span class="nm">${esc(u.nick||u.id)}</span></li>`).join(""):`<li class="empty">Ninguém respondeu ainda.</li>`;
+}
+function overlay(big,sub){const o=$("overlay");if(!big){o.hidden=true;return}$("ovBig").textContent=big;$("ovSub").textContent=sub||"";o.hidden=false}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3500)}
+
+/* ---------- áudio (tudo gerado no próprio código, sem música de terceiros) ---------- */
+const A={ctx:null,master:null,music:null,step:0,
+  init(){if(this.ctx)return;try{this.ctx=new (window.AudioContext||window.webkitAudioContext)();this.master=this.ctx.createGain();this.master.connect(this.ctx.destination);this.vol()}catch(e){}},
+  vol(){if(this.master)this.master.gain.value=(parseInt($("fVol").value)||0)/100*0.6},
+  on(){return this.ctx&&$("fSfx").checked},
+  tone(f,d,type="sine",g=0.3,when=0,slide=0){if(!this.ctx)return;const t=this.ctx.currentTime+when,o=this.ctx.createOscillator(),v=this.ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    v.gain.setValueAtTime(0.0001,t);v.gain.exponentialRampToValueAtTime(g,t+0.01);v.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(v);v.connect(this.master);o.start(t);o.stop(t+d+0.05)},
+  tick(left){if(!this.on())return;left<=5?this.tone(1320,0.09,"square",0.18):this.tone(880,0.05,"triangle",0.12)},
+  start(){if(!this.on())return;[523,659,784,1047].forEach((f,i)=>this.tone(f,0.16,"triangle",0.22,i*0.09))},
+  pop(){if(!this.on()||this._p&&this.ctx.currentTime-this._p<0.12)return;this._p=this.ctx.currentTime;this.tone(600,0.07,"sine",0.1,0,900)},
+  timeUp(){if(!this.on())return;this.tone(180,0.5,"sawtooth",0.22,0,120)},
+  right(){if(!this.on())return;this.tone(110,0.25,"sine",0.35,0,55);[784,988,1175,1568].forEach((f,i)=>this.tone(f,0.35,"triangle",0.2,0.12+i*0.08))},
+  fanfare(){if(!this.on())return;[523,523,523,659,784,1047].forEach((f,i)=>this.tone(f,i===5?0.8:0.18,"square",0.14,i*0.16))},
+  /* trilha de fundo: baixo + acordes em loop, bem baixinha */
+  musicOn(){this.init();if(!this.ctx||this.music||!$("fMus").checked)return;
+    const chords=[[220,262,330],[175,220,262],[196,247,294],[165,208,247]];
+    this.music=setInterval(()=>{if(!$("fMus").checked)return;const s=this.step++,c=chords[(s>>3)%4];
+      this.tone(c[0]/2,0.22,"triangle",0.09);if(s%2===0)this.tone(c[(s>>1)%3]*2,0.15,"sine",0.035);
+      if(s%4===2)this.tone(4000,0.03,"square",0.015)},230)},
+  musicOff(){clearInterval(this.music);this.music=null}
+};
+$("fVol").oninput=()=>{A.vol();store.set("vol",$("fVol").value)};
+$("fSfx").onchange=e=>store.set("sfx",e.target.checked?"1":"0");
+$("fMus").onchange=e=>{store.set("mus",e.target.checked?"1":"0");e.target.checked?A.musicOn():A.musicOff()};
+
+/* ---------- fluxo do jogo ---------- */
+function startRound(){A.init();A.musicOn();newRound();S.i=-1;nextQuestion()}
+function nextQuestion(){
+  clearInterval(S.timer);
+  if(S.i>=9){endRound();return}
+  S.i++;S.phase="question";S.votes=new Map();S.feed=[];S.left=secs();
+  overlay(null);drawQuestion();drawTimer();drawFeed();
+  $("bStart").textContent="Reiniciar";$("bNext").disabled=false;
+  A.start();
+  S.timer=setInterval(()=>{S.left--;drawTimer();if(S.left<=0){clearInterval(S.timer);A.timeUp();setTimeout(reveal,700)}else A.tick(S.left)},1000);
+}
+function reveal(){
+  if(S.phase!=="question")return;
+  S.phase="reveal";const q=S.round[S.i];let hits=0;
+  S.votes.forEach((v,id)=>{if(v===q.c){hits++;S.score.set(id,(S.score.get(id)||0)+VALUE[S.i])}});
+  drawAnswers();drawRank();A.right();
+  S.feed=[];drawFeed();
+  $("feed").innerHTML=`<li class="empty">${hits?`${hits} ${hits===1?"pessoa acertou":"pessoas acertaram"}! Resposta certa: ${L[q.c]}`:`Ninguém acertou. Era a ${L[q.c]}.`}</li>`;
+  if($("fAuto").checked){clearTimeout(S.auto);S.auto=setTimeout(nextQuestion,6000)}
+}
+function endRound(){
+  S.phase="end";clearInterval(S.timer);A.fanfare();
+  const top=[...S.score.entries()].sort((a,b)=>b[1]-a[1])[0];
+  const u=top&&S.users.get(top[0]);
+  overlay(u?`${u.nick||top[0]} lidera!`:"Fim da rodada",u?`${top[1]} pontos. Nova rodada em instantes, continue comentando!`:"Nova rodada em instantes.");
+  $("bNext").disabled=true;
+  if($("fAuto").checked){clearTimeout(S.auto);S.auto=setTimeout(startRound,15000)}
+}
+function idle(){overlay("A rodada já vai começar","Responda comentando a letra: A, B, C ou D. Quem acertar mais sobe no ranking!")}
+
+/* ---------- votos vindos do chat ---------- */
+function onComment(id,nick,pic,text){
+  if(!id)return;
+  S.users.set(id,{id,nick:nick||id,pic:pic||(S.users.get(id)||{}).pic});
+  if(S.phase!=="question")return;
+  const m=String(text||"").trim().match(/^(?:letra\s*)?([abcd])(?![\p{L}\p{N}])/iu);
+  if(!m||S.votes.has(id))return;
+  S.votes.set(id,L.indexOf(m[1].toUpperCase()));
+  S.feed.unshift({...S.users.get(id),txt:"respondeu"});S.feed=S.feed.slice(0,12);A.pop();
+  drawAnswers();drawFeed();
+}
+
+/* ---------- conexão com a live (Euler Stream) ---------- */
+function setConn(state,label){const c=$("conn");c.className="chip "+state;c.textContent=label}
+function connect(){
+  const user=$("fUser").value.trim().replace(/^@/,""),key=$("fKey").value.trim();
+  if(!user){toast("Digite seu @ do TikTok.");return}
+  if(!key){toast("Cole a chave da Euler Stream.");return}
+  store.set("user",user);store.set("key",key);
+  disconnect(true);
+  let ws;
+  try{ws=new WebSocket(`wss://ws.eulerstream.com?uniqueId=${encodeURIComponent(user)}&apiKey=${encodeURIComponent(key)}`)}
+  catch(e){setConn("off","Bloqueado");toast("Este link não permite conexão externa. Abra a versão hospedada do jogo.");return}
+  S.ws=ws;setConn("sim","Conectando…");
+  ws.onopen=()=>{setConn("on","Ao vivo");toast("Conectado na sua live.")};
+  ws.onmessage=ev=>{
+    let data;try{data=JSON.parse(ev.data)}catch(e){return}
+    $("raw").textContent=JSON.stringify(data).slice(0,1200);
+    const list=Array.isArray(data.messages)?data.messages:[data];
+    list.forEach(m=>{
+      const type=String(m.type||m.event||m.method||"");
+      const d=m.data||m;
+      if(!/chat/i.test(type)&&!(d&&(d.comment||d.content)))return;
+      const u=d.user||{};
+      const pic=(u.profilePicture&&(u.profilePicture.url||u.profilePicture.urls||[])[0])||u.profilePictureUrl||(u.avatarThumb&&(u.avatarThumb.urlList||u.avatarThumb.url||[])[0])||"";
+      onComment(u.uniqueId||u.userId||d.uniqueId||d.userId,u.nickname||d.nickname||u.uniqueId,pic,d.comment||d.content);
+    });
+  };
+  ws.onerror=()=>{setConn("off","Erro");toast("Não conectou. Confira o @, a chave e se a live está aberta.")};
+  ws.onclose=ev=>{if(S.ws!==ws)return;S.ws=null;setConn("off","Desconectado");if(ev.reason)toast("Conexão fechada: "+ev.reason)};
+}
+function disconnect(silent){if(S.ws){const w=S.ws;S.ws=null;try{w.close()}catch(e){}}if(!silent)setConn(S.sim?"sim":"off",S.sim?"Simulador":"Desconectado")}
+
+/* ---------- simulador ---------- */
+const FAKE=["ana.lu","bruno_s","carol22","dudu.it","gabi_","joao.pedro","kaka","lari.m","matheus","nina","pedrinho","rafa.oficial","tati","vini_7","yasmin","zeca"];
+function simToggle(on){
+  clearInterval(S.sim);S.sim=null;
+  if(on){S.sim=setInterval(()=>{
+    if(S.phase!=="question")return;
+    const id=FAKE[Math.random()*FAKE.length|0];const q=S.round[S.i];
+    const r=Math.random();const v=r<.55?q.c:(Math.random()*4|0);
+    onComment(id,id,"",Math.random()<.85?L[v]:"kkkk boa");
+  },700);setConn("sim","Simulador")}
+  else if(!S.ws)setConn("off","Desconectado");
+}
+
+/* ---------- botões ---------- */
+$("bStart").onclick=startRound;
+$("bNext").onclick=()=>{clearTimeout(S.auto);if(S.phase==="question"){clearInterval(S.timer);reveal()}else nextQuestion()};
+$("bCfg").onclick=()=>{$("sheet").hidden=false};
+$("bClose").onclick=()=>{$("sheet").hidden=true};
+$("sheet").onclick=e=>{if(e.target.id==="sheet")$("sheet").hidden=true};
+$("bConn").onclick=connect;
+$("bDisc").onclick=()=>disconnect(false);
+$("fSim").onchange=e=>{simToggle(e.target.checked);store.set("sim",e.target.checked?"1":"0")};
+$("fAuto").onchange=e=>store.set("auto",e.target.checked?"1":"0");
+$("fTime").onchange=e=>store.set("time",String(secs()));
+$("bReset").onclick=()=>{S.score.clear();drawRank();toast("Ranking zerado.")};
+
+/* ---------- início ---------- */
+$("fUser").value=store.get("user","");$("fKey").value=store.get("key","");
+$("fTime").value=store.get("time","20");$("fVol").value=store.get("vol","70");$("fSfx").checked=store.get("sfx","1")==="1";$("fMus").checked=store.get("mus","1")==="1";$("fAuto").checked=store.get("auto","1")==="1";
+newRound();S.i=0;drawQuestion();S.i=-1;drawLadder();S.left=secs();drawTimer();drawRank();drawFeed();idle();
+if(store.get("sim","1")==="1"){$("fSim").checked=true;simToggle(true)}
+try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}
+</script>
